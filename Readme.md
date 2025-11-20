@@ -121,3 +121,16 @@ Contributions are welcome! Please feel free to open issues or submit pull reques
 ## License
 
 This project is licensed under the ISC License.
+
+## Color Palette
+
+The application uses a "Light Dashboard with Vibrant Accents" theme, inspired by a modern tech startup vibe.
+
+### Palette Details:
+*   **Background:** Pure White (`#FFFFFF`)
+*   **Primary Text/Elements:** Dark Navy (`#0F172A`)
+*   **Accent 1 (Electric Blue):** `#3B82F6` (used for general accents, links, primary buttons)
+*   **Accent 2 (Lime Green):** `#84CC16` (used for progress indicators, secondary buttons)
+*   **Accent 3 (Purple):** `#A855F7` (used for badges and specific highlight elements)
+
+**Rationale:** The design emphasizes clean light backgrounds with carefully chosen vibrant accents to highlight specific interactive elements and data, avoiding an overwhelming color scheme.
