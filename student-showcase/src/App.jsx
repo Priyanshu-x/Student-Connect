@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import {
   FaArrowRight,
   FaCrown,
@@ -9,6 +10,8 @@ import {
   FaUserCheck,
 } from 'react-icons/fa'
 import './App.css'
+import AuthPage from './components/AuthPage'
+import Dashboard from './pages/Dashboard'
 
 const navLinks = [
   { label: 'Home', href: '#home' },
@@ -184,6 +187,134 @@ const FeatureCard = ({ title, detail, icon }) => (
   </motion.div>
 )
 
+const typewriterPhrases = [
+  'Spotlight every achievement',
+  'Ignite campus community',
+  'Discover student potential',
+  'Celebrate student excellence',
+]
+
+const TypewriterHeroText = ({ phrases }) => {
+  const [displayText, setDisplayText] = useState('')
+  const [phraseIndex, setPhraseIndex] = useState(0)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  useEffect(() => {
+    const currentPhrase = phrases[phraseIndex]
+
+    if (!isDeleting && displayText === currentPhrase) {
+      const timeout = setTimeout(() => setIsDeleting(true), 1400)
+      return () => clearTimeout(timeout)
+    }
+
+    if (isDeleting && displayText === '') {
+      setIsDeleting(false)
+      setPhraseIndex((prev) => (prev + 1) % phrases.length)
+      return
+    }
+
+    const timeout = setTimeout(() => {
+      const nextLength = displayText.length + (isDeleting ? -1 : 1)
+      setDisplayText(currentPhrase.slice(0, nextLength))
+    }, isDeleting ? 55 : 110)
+
+    return () => clearTimeout(timeout)
+  }, [displayText, isDeleting, phraseIndex, phrases])
+
+  return (
+    <div className="typewriter-wrapper">
+      <motion.h1
+        className="hero-type gradient-heading"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <span>{displayText}</span>
+        <span className="typewriter-caret" />
+      </motion.h1>
+      <p className="hero-type-sub">Built for Scope Global Skills University</p>
+    </div>
+  )
+}
+
+const ActivityFeedCard = ({ items }) => {
+  const [hovered, setHovered] = useState(false)
+  const [tilt, setTilt] = useState({ x: 0, y: 0 })
+  const [pointer, setPointer] = useState({ x: 0, y: 0 })
+  const [ripples, setRipples] = useState([])
+
+  const handleMove = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    const x = ((event.clientX - rect.left) / rect.width - 0.5) * 10
+    const y = ((event.clientY - rect.top) / rect.height - 0.5) * 10
+    setTilt({ x, y })
+    setPointer({ x: event.clientX - rect.left, y: event.clientY - rect.top })
+  }
+
+  const handleLeave = () => {
+    setHovered(false)
+    setTilt({ x: 0, y: 0 })
+  }
+
+  const handleClick = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    const x = event.clientX - rect.left
+    const y = event.clientY - rect.top
+    const rippleId = Date.now()
+    setRipples((prev) => [...prev, { id: rippleId, x, y }])
+    setTimeout(() => {
+      setRipples((prev) => prev.filter((ripple) => ripple.id !== rippleId))
+    }, 600)
+  }
+
+  return (
+    <motion.div
+      className={`hero-panel activity-card ${hovered ? 'glass-card-hover' : ''}`}
+      initial={{ opacity: 0, y: 30, scale: 0.96 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, amount: 0.4 }}
+      animate={{
+        rotateX: tilt.y,
+        rotateY: -tilt.x,
+        scale: hovered ? 1.02 : 1,
+      }}
+      transition={{ type: 'spring', stiffness: 220, damping: 28 }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={handleLeave}
+      onMouseMove={handleMove}
+      onClick={handleClick}
+    >
+      <div className="activity-glow" />
+      <div
+        className="glass-pointer"
+        style={{ left: pointer.x, top: pointer.y, opacity: hovered ? 1 : 0 }}
+      />
+      {ripples.map((ripple) => (
+        <span
+          key={ripple.id}
+          className="glass-ripple"
+          style={{ left: ripple.x, top: ripple.y }}
+        />
+      ))}
+      <div className="panel-header">
+        <span>Live Activity Feed</span>
+        <FaShieldAlt />
+      </div>
+      <ul>
+        {items.map((item) => (
+          <li key={item}>
+            <span className="pulse" />
+            {item}
+          </li>
+        ))}
+      </ul>
+      <div className="panel-footer">
+        <span>Synced with campus activity radar</span>
+      </div>
+    </motion.div>
+  )
+}
+
 const contentVariants = {
   hidden: { opacity: 0, y: 28 },
   visible: {
@@ -201,10 +332,26 @@ function App() {
   const [verificationStep, setVerificationStep] = useState('method')
   const [showFullLeaderboard, setShowFullLeaderboard] = useState(false)
   const [activeNav, setActiveNav] = useState(navLinks[0].href)
+  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 })
+  const location = useLocation()
+  const navigate = useNavigate()
+  const isAuthPage =
+    location.pathname === '/login' || location.pathname === '/signup'
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 2000)
     return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    const handleMove = (e) => {
+      const { innerWidth, innerHeight } = window
+      const x = (e.clientX / innerWidth - 0.5) * 40
+      const y = (e.clientY / innerHeight - 0.5) * 40
+      setCursorPos({ x, y })
+    }
+    window.addEventListener('pointermove', handleMove)
+    return () => window.removeEventListener('pointermove', handleMove)
   }, [])
 
   const filteredProfiles = useMemo(() => {
@@ -219,8 +366,13 @@ function App() {
     )
   }, [query])
 
-  return (
-    <div className="app">
+  const landingContent = (
+    <>
+      <motion.div
+        className="cursor-orb"
+        animate={{ x: cursorPos.x, y: cursorPos.y }}
+        transition={{ type: 'spring', stiffness: 120, damping: 30 }}
+      />
       <AnimatePresence mode="wait">{isLoading && <LoadingScreen />}</AnimatePresence>
 
       <motion.header
@@ -229,8 +381,12 @@ function App() {
         animate={{ opacity: 1, y: 0, transition: { delay: 0.4, duration: 0.6 } }}
       >
         <div className="auth-buttons">
-          <button className="ghost-btn">Sign Up</button>
-          <button className="ghost-btn">Login</button>
+          <button className="ghost-btn" onClick={() => navigate('/signup')}>
+            Sign Up
+          </button>
+          <button className="ghost-btn" onClick={() => navigate('/login')}>
+            Login
+          </button>
         </div>
         <nav>
           {navLinks.map((link) => (
@@ -253,7 +409,7 @@ function App() {
             </motion.a>
           ))}
         </nav>
-        <div className="logo">Astra University</div>
+        <div className="logo">Scope Global Skills University</div>
       </motion.header>
 
       <motion.main
@@ -269,10 +425,7 @@ function App() {
             animate={{ y: 0, opacity: 1 }}
           >
             <p className="hero-tag">Student Activity Showcase Portal</p>
-            <h1>
-              Spotlight every achievement,
-              <span> ignite campus community.</span>
-            </h1>
+            <TypewriterHeroText phrases={typewriterPhrases} />
             <p className="hero-description">
               Discover verified student stories, explore live leaderboards, and
               join events from one vibrant space built for collaboration,
@@ -302,27 +455,7 @@ function App() {
             </div>
           </motion.div>
 
-          <motion.div
-            className="hero-panel"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
-            <div className="panel-header">
-              <span>Live Activity Feed</span>
-              <FaShieldAlt />
-            </div>
-            <ul>
-              {notifications.map((item) => (
-                <li key={item}>
-                  <span className="pulse" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <div className="panel-footer">
-              <span>Powered by campus-wide activity score</span>
-            </div>
-          </motion.div>
+          <ActivityFeedCard items={notifications} />
         </section>
 
         <section id="features" className="feature-grid">
@@ -410,16 +543,16 @@ function App() {
 
         <section id="leaderboard" className="leaderboard-section">
           <div className="section-header">
-            <div>
+      <div>
               <p className="hero-tag">Trending Voices</p>
               <h2>Leaderboard · Top 5</h2>
-            </div>
+      </div>
             <button
               className="ghost-btn"
               onClick={() => setShowFullLeaderboard(true)}
             >
               View More
-            </button>
+        </button>
           </div>
           <div className="leaderboard-list">
             {leaderboard.slice(0, 5).map((student, index) => (
@@ -438,8 +571,8 @@ function App() {
                   <h4>{student.name}</h4>
                   <p>
                     {student.dept} • {student.badge}
-                  </p>
-                </div>
+        </p>
+      </div>
                 <strong>{student.score}</strong>
               </motion.div>
             ))}
@@ -712,6 +845,19 @@ function App() {
             </motion.div>
           </motion.div>
         )}
+      </AnimatePresence>
+    </>
+  )
+
+  return (
+    <div className={`app ${isAuthPage ? 'auth-mode' : ''}`}>
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={landingContent} />
+          <Route path="/login" element={<AuthPage variant="login" />} />
+          <Route path="/signup" element={<AuthPage variant="signup" />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Routes>
       </AnimatePresence>
     </div>
   )
