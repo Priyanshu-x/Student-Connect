@@ -1,4 +1,5 @@
 const express = require('express')
+const asyncHandler = require('express-async-handler');
 const cors = require('cors')
 const dotenv = require('dotenv')
 const connectDB = require('./src/config/db')

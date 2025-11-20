@@ -1,46 +1,42 @@
 const jwt = require('jsonwebtoken')
 const User = require('../models/User')
+const asyncHandler = require('express-async-handler')
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' })
 }
 
-exports.signup = async (req, res) => {
-  try {
-    const { name, email, password, department, year } = req.body
+const signup = asyncHandler(async (req, res) => {
+  const { name, email, password, department, year } = req.body
 
-    if (!name || !email || !password || !department || !year) {
-      return res
-        .status(400)
-        .json({ success: false, message: 'Please provide all required fields.' })
-    }
+  if (!name || !email || !password || !department || !year) {
+    res.status(400)
+    throw new Error('Please provide all required fields.')
+  }
 
-    if (password.length < 6) {
-      return res
-        .status(400)
-        .json({ success: false, message: 'Password must be at least 6 characters.' })
-    }
+  if (password.length < 6) {
+    res.status(400)
+    throw new Error('Password must be at least 6 characters.')
+  }
 
-    const existingUser = await User.findOne({ email })
-    if (existingUser) {
-      return res
-        .status(409)
-        .json({ success: false, message: 'An account with this email already exists.' })
-    }
+  const existingUser = await User.findOne({ email })
+  if (existingUser) {
+    res.status(409)
+    throw new Error('An account with this email already exists.')
+  }
 
-    const user = await User.create({
-      name,
-      email,
-      password,
-      department,
-      year,
-    })
+  const user = await User.create({
+    name,
+    email,
+    password,
+    department,
+    year,
+  })
 
-    const token = generateToken(user._id)
-
-    return res.status(201).json({
+  if (user) {
+    res.status(201).json({
       success: true,
-      token,
+      token: generateToken(user._id),
       user: {
         id: user._id,
         name: user.name,
@@ -50,49 +46,56 @@ exports.signup = async (req, res) => {
         verified: user.verified,
       },
     })
-  } catch (error) {
-    console.error('Signup error:', error)
-    return res.status(500).json({ success: false, message: 'Server error' })
+  } else {
+    res.status(400)
+    throw new Error('Invalid user data')
   }
-}
+})
 
-exports.login = async (req, res) => {
-  try {
-    const { email, password } = req.body
+const login = asyncHandler(async (req, res) => {
+  const { email, password } = req.body
 
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ success: false, message: 'Please provide email and password.' })
-    }
-
-    const user = await User.findOne({ email })
-    if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid credentials.' })
-    }
-
-    const isMatch = await user.comparePassword(password)
-    if (!isMatch) {
-      return res.status(400).json({ success: false, message: 'Invalid credentials.' })
-    }
-
-    const token = generateToken(user._id)
-
-    return res.json({
-      success: true,
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        department: user.department,
-        year: user.year,
-        verified: user.verified,
-      },
-    })
-  } catch (error) {
-    console.error('Login error:', error)
-    return res.status(500).json({ success: false, message: 'Server error' })
+  if (!email || !password) {
+    res.status(400)
+    throw new Error('Please provide email and password.')
   }
+
+  const user = await User.findOne({ email })
+  if (!user) {
+    res.status(400)
+    throw new Error('Invalid credentials.')
+  }
+
+  const isMatch = await user.comparePassword(password)
+  if (!isMatch) {
+    res.status(400)
+    throw new Error('Invalid credentials.')
+  }
+
+  res.json({
+    success: true,
+    token: generateToken(user._id),
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      department: user.department,
+      year: user.year,
+      verified: user.verified,
+    },
+  })
+})
+
+// @desc    Get user data
+// @route   GET /api/auth/me
+// @access  Private
+const getMe = asyncHandler(async (req, res) => {
+  res.status(200).json(req.user)
+})
+
+module.exports = {
+  signup,
+  login,
+  getMe,
 }
 

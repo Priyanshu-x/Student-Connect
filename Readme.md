@@ -49,7 +49,7 @@ Follow these instructions to set up and run the project locally on your machine.
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/student-showcase.git
+    git clone https://github.com/Priyanshu-x/Student-Connect
     cd student-showcase
     ```
 
