@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 const fieldSets = {
   login: [
@@ -60,7 +61,7 @@ const AuthPage = ({ variant = 'login' }) => {
   const isLogin = variant === 'login'
   const navigate = useNavigate()
   const fields = fieldSets[variant]
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+  const { login, signup, isLoading: authLoading } = useAuth()
 
   const [formData, setFormData] = useState(() => createInitialState(fields))
   const [status, setStatus] = useState({ error: '', success: '' })
@@ -93,42 +94,30 @@ const AuthPage = ({ variant = 'login' }) => {
 
     try {
       setIsSubmitting(true)
-      const endpoint = `${API_BASE}/api/auth/${isLogin ? 'login' : 'signup'}`
-      const payload = isLogin
-        ? {
-            email: formData.email,
-            password: formData.password,
-          }
-        : {
-            name: formData.name,
-            email: formData.email,
-            password: formData.password,
-            department: formData.department,
-            year: formData.year,
-          }
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      })
-
-      const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data.message || 'Something went wrong.')
+      let result
+      if (isLogin) {
+        result = await login(formData.email, formData.password)
+      } else {
+        result = await signup(
+          formData.name,
+          formData.email,
+          formData.password,
+          formData.department,
+          formData.year
+        )
       }
 
-      localStorage.setItem('sgsu_token', data.token)
-      setStatus({
-        error: '',
-        success: isLogin ? 'Login successful! Redirecting...' : 'Account created! Redirecting...',
-      })
-
-      setTimeout(() => {
-        navigate('/dashboard')
-      }, 800)
+      if (result.success) {
+        setStatus({
+          error: '',
+          success: isLogin
+            ? 'Login successful! Redirecting...'
+            : 'Account created! Redirecting...',
+        })
+        // Redirection handled by AuthContext
+      } else {
+        throw new Error(result.error)
+      }
     } catch (error) {
       setStatus({ error: error.message, success: '' })
     } finally {
@@ -180,7 +169,10 @@ const AuthPage = ({ variant = 'login' }) => {
           {status.error && <p className="auth-error">{status.error}</p>}
           {status.success && <p className="auth-success">{status.success}</p>}
 
-          <NeonButton variant={isLogin ? 'primary' : 'secondary'} isLoading={isSubmitting}>
+          <NeonButton
+            variant={isLogin ? 'primary' : 'secondary'}
+            isLoading={isSubmitting || authLoading}
+          >
             {isLogin ? 'Login' : 'Sign up'}
           </NeonButton>
         </form>

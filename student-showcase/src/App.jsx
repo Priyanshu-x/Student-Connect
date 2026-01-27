@@ -12,6 +12,8 @@ import {
 import './App.css'
 import AuthPage from './components/AuthPage'
 import Dashboard from './pages/Dashboard'
+import { useData } from './context/DataContext' // Import useData
+import { useAuth } from './context/AuthContext' // Import useAuth
 
 const navLinks = [
   { label: 'Home', href: '#home' },
@@ -20,121 +22,6 @@ const navLinks = [
   { label: 'Leaderboard', href: '#leaderboard' },
 ]
 
-const profiles = [
-  {
-    id: 1,
-    name: 'Suyash Acharya',
-    major: 'AIML • 2024',
-    tagline: 'AI Research Fellow',
-    avatar: 'https://i.pravatar.cc/150?img=47',
-    hobbies: ['Digital Art', 'Trail Running'],
-    clubs: ['Coder Club', 'AI Society'],
-    achievements: [
-      'Built campus-wide hackathon analytics tool',
-      'Finalist @ Smart India Hackathon',
-    ],
-    badges: ['Innovation', 'Team Luminax.ai'],
-    score: 982,
-    verified: true,
-  },
-  {
-    id: 2,
-    name: 'Ayush Dhakad',
-    major: 'Fullstack • 2024',
-    tagline: 'Dev Captain',
-    avatar: 'https://i.pravatar.cc/150?img=12',
-    hobbies: ['Gaming', 'Sports'],
-    clubs: ['Coder Club', 'Music'],
-    achievements: [
-      'Lead builder of autonomous rover',
-      'Winner @ Technovation League',
-    ],
-    badges: ['Builder', 'Mentor'],
-    score: 912,
-    verified: true,
-  },
-  {
-    id: 3,
-    name: 'Priyanshu Kushwaha',
-    major: 'Cybersecurity • 2024',
-    tagline: 'Community Strategist',
-    avatar: 'https://i.pravatar.cc/150?img=32',
-    hobbies: ['Storyboard Writing', 'Bouldering'],
-    clubs: ['Entrepreneurship Cell', 'Adventure Guild'],
-    achievements: [
-      'Curated 14-campus founder summit',
-      'Google Women Techmakers Scholar',
-    ],
-    badges: ['Community', 'Leadership'],
-    score: 888,
-    verified: false,
-  },
-  {
-    id: 4,
-    name: 'Ishan Choudhary',
-    major: 'Fullstack • 2024',
-    tagline: 'Design Innovator',
-    avatar: 'https://i.pravatar.cc/150?img=59',
-    hobbies: ['Sketching', 'Sim Racing'],
-    clubs: ['AI Master', 'Design Forge'],
-    achievements: [
-      'Formula-E style electric prototype',
-      'Patented a modular hinge system',
-    ],
-    badges: ['Trailblazer', 'Patent Holder'],
-    score: 861,
-    verified: true,
-  },
-  {
-    id: 5,
-    name: 'Riyansh Malviya',
-    major: 'Information Technology • 2024',
-    tagline: 'Game Dev Enthusiast',
-    avatar: 'https://i.pravatar.cc/150?img=21',
-    hobbies: ['CTF Challenges', 'Mixed Media'],
-    clubs: ['Java Club', 'Art Haus'],
-    achievements: [
-      'Secured campus Wi-Fi redesign',
-      'Defcon India CTF finalist',
-    ],
-    badges: ['Dev Ops', 'Coach'],
-    score: 847,
-    verified: false,
-  },
-]
-
-const leaderboard = [
-  { name: 'Suyash Acharya', dept: 'AIML', score: 982, badge: 'Innovation Ace' },
-  { name: 'Ayush Dhakad', dept: 'Fullstack', score: 912, badge: 'Robotics Lead' },
-  { name: 'Priyanshu Kushwaha', dept: 'Cybersecurity', score: 888, badge: 'Community Star' },
-  { name: 'Ishan Choudhary', dept: 'Fullstack', score: 861, badge: 'Design Pro' },
-  { name: 'Riyansh Malviya', dept: 'Information Technology', score: 847, badge: 'Security Guru' },
-  { name: 'Lalit Singh', dept: 'CS', score: 822, badge: 'Event Lead' },
-  { name: 'Hashim Khan', dept: 'AIML', score: 811, badge: 'Data Wizard' },
-]
-
-const events = [
-  {
-    title: 'Navonmesh Hackathon',
-    date: 'March 28 - 30',
-    description:
-      '48 hours of prototyping with mentors from Google, Atlassian and alumni founders.',
-    contacts: ['hackathon@univ.edu', '+91 90120 44566'],
-  },
-  {
-    title: 'Dewali Skills Wali',
-    date: 'Oct 15 - 17',
-    description:
-      'Pitch sustainable ideas to win incubation credits & leadership badges.',
-    contacts: ['impact-lab@univ.edu'],
-  },
-]
-
-const notifications = [
-  'New badge unlocked: Collaboration Catalyst',
-  '3 open slots for UX Research Sprint this weekend',
-  'Update your profile to stay ranked on December leaderboard',
-]
 
 const LoadingScreen = () => {
   const colors = ['#7c5dff', '#ff6ec7', '#37d1ff', '#f4c542']
@@ -325,12 +212,21 @@ const contentVariants = {
 }
 
 function App() {
-  const [isLoading, setIsLoading] = useState(true)
+  const { profiles, leaderboard, events, notifications, isLoadingData, error: dataError } = useData()
+  const { user, token, updateUser } = useAuth() // Access auth context
   const [query, setQuery] = useState('')
   const [selectedProfile, setSelectedProfile] = useState(null)
   const [showVerification, setShowVerification] = useState(false)
   const [verificationStep, setVerificationStep] = useState('method')
+  const [verificationOtp, setVerificationOtp] = useState('')
+  const [verificationDocs, setVerificationDocs] = useState([])
+  const [verificationLoading, setVerificationLoading] = useState(false)
+  const [verificationMessage, setVerificationMessage] = useState('')
+  const [verificationError, setVerificationError] = useState('')
   const [showFullLeaderboard, setShowFullLeaderboard] = useState(false)
+  const [eventMessage, setEventMessage] = useState('') // New state for event feedback
+  const [eventError, setEventError] = useState('') // New state for event errors
+  const [eventLoading, setEventLoading] = useState(false); // New state for event loading
   const [activeNav, setActiveNav] = useState(navLinks[0].href)
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 })
   const location = useLocation()
@@ -338,10 +234,13 @@ function App() {
   const isAuthPage =
     location.pathname === '/login' || location.pathname === '/signup'
 
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 2000)
-    return () => clearTimeout(timer)
-  }, [])
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000' // Define API_BASE
+
+  // Removed local isLoading state and its useEffect, now using isLoadingData from context
+  // useEffect(() => {
+  //   const timer = setTimeout(() => setIsLoading(false), 2000)
+  //   return () => clearTimeout(timer)
+  // }, [])
 
   useEffect(() => {
     const handleMove = (e) => {
@@ -355,16 +254,16 @@ function App() {
   }, [])
 
   const filteredProfiles = useMemo(() => {
-    if (!query.trim()) return profiles
+    if (!query.trim()) return profiles || [] // Ensure profiles is an array
     const term = query.toLowerCase()
-    return profiles.filter(
+    return (profiles || []).filter(
       (profile) =>
-        profile.name.toLowerCase().includes(term) ||
-        profile.major.toLowerCase().includes(term) ||
-        profile.clubs.some((club) => club.toLowerCase().includes(term)) ||
-        profile.achievements.some((item) => item.toLowerCase().includes(term))
+        (profile.name && profile.name.toLowerCase().includes(term)) ||
+        (profile.major && profile.major.toLowerCase().includes(term)) ||
+        (profile.clubs && profile.clubs.some((club) => club.toLowerCase().includes(term))) ||
+        (profile.achievements && profile.achievements.some((item) => item.toLowerCase().includes(term)))
     )
-  }, [query])
+  }, [query, profiles]) // Add profiles to dependency array
 
   const landingContent = (
     <>
@@ -373,7 +272,13 @@ function App() {
         animate={{ x: cursorPos.x, y: cursorPos.y }}
         transition={{ type: 'spring', stiffness: 120, damping: 30 }}
       />
-      <AnimatePresence mode="wait">{isLoading && <LoadingScreen />}</AnimatePresence>
+      <AnimatePresence mode="wait">{isLoadingData && <LoadingScreen />}</AnimatePresence>
+      {dataError && <div className="error-message">Error: {dataError}</div>} {/* Display global data error */}
+      {(eventMessage || eventError) && (
+        <div className={`event-feedback ${eventError ? 'error' : 'success'}`}>
+          {eventMessage || eventError}
+        </div>
+      )}
 
       <motion.header
         className="nav-wrapper"
@@ -416,7 +321,7 @@ function App() {
         id="home"
         variants={contentVariants}
         initial="hidden"
-        animate={isLoading ? 'hidden' : 'visible'}
+        animate={isLoadingData ? 'hidden' : 'visible'}
       >
         <section className="hero">
           <motion.div
@@ -493,30 +398,35 @@ function App() {
           </div>
 
           <motion.div layout className="profile-grid">
-            {filteredProfiles.map((profile) => (
-              <motion.button
-                key={profile.id}
-                className="profile-card"
-                whileHover={{ y: -8 }}
-                onClick={() => setSelectedProfile(profile)}
-              >
-                <img src={profile.avatar} alt={profile.name} />
-                <div className="profile-info">
-                  <div className="badge-row">
-                    {profile.badges.map((badge) => (
-                      <span key={badge}>{badge}</span>
-                    ))}
+            {filteredProfiles.map((profile) => {
+              if (!profile || !profile.id) { // Ensure profile and profile.id exist
+                return null; // Skip rendering if profile or its ID is undefined
+              }
+              return (
+                <motion.button
+                  key={profile.id}
+                  className="profile-card"
+                  whileHover={{ y: -8 }}
+                  onClick={() => setSelectedProfile(profile)}
+                >
+                  <img src={profile.avatar} alt={profile.name} />
+                  <div className="profile-info">
+                    <div className="badge-row">
+                      {(profile.badges || []).map((badge) => (
+                        <span key={badge}>{badge}</span>
+                      ))}
+                    </div>
+                    <h3>{profile.name}</h3>
+                    <p>{profile.major}</p>
+                    <p className="tagline">{profile.tagline}</p>
                   </div>
-                  <h3>{profile.name}</h3>
-                  <p>{profile.major}</p>
-                  <p className="tagline">{profile.tagline}</p>
-                </div>
-                <div className="profile-score">
-                  <strong>{profile.score}</strong>
-                  <span>activity score</span>
-                </div>
-              </motion.button>
-            ))}
+                  <div className="profile-score">
+                    <strong>{profile.score}</strong>
+                    <span>activity score</span>
+                  </div>
+                </motion.button>
+              );
+            })}
           </motion.div>
         </section>
 
@@ -595,7 +505,36 @@ function App() {
               >
                 <div className="event-top">
                   <span>{event.date}</span>
-                  <button className="ghost-btn compact">Notify Me</button>
+                  <button
+                    className="ghost-btn compact"
+                    onClick={async () => {
+                      setEventLoading(true)
+                      setEventMessage('')
+                      setEventError('')
+                      try {
+                        if (!user || !token) {
+                          throw new Error('Please log in to register for events.')
+                        }
+                        const response = await fetch(`${API_BASE}/api/events/${event._id}/register`, {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${token}`,
+                          },
+                        })
+                        const data = await response.json()
+                        if (!response.ok) throw new Error(data.message || 'Failed to register for event')
+                        setEventMessage(`Successfully registered for ${event.title}!`)
+                      } catch (err) {
+                        setEventError(err.message || 'Error registering for event.')
+                      } finally {
+                        setEventLoading(false)
+                      }
+                    }}
+                    disabled={eventLoading || !user || user.verified === false} // Disable if not logged in or not verified
+                  >
+                    Notify Me
+                  </button>
                 </div>
                 <h3>{event.title}</h3>
                 <p>{event.description}</p>
@@ -707,7 +646,9 @@ function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setShowVerification(false)}
+            onClick={() => {
+              if (!verificationLoading) setShowVerification(false)
+            }}
           >
             <motion.div
               className="verification-modal"
@@ -718,7 +659,16 @@ function App() {
             >
               <button
                 className="close-btn"
-                onClick={() => setShowVerification(false)}
+                onClick={() => {
+                  if (!verificationLoading) {
+                    setShowVerification(false)
+                    setVerificationMessage('')
+                    setVerificationError('')
+                    setVerificationOtp('')
+                    setVerificationDocs([])
+                  }
+                }}
+                disabled={verificationLoading}
               >
                 ×
               </button>
@@ -727,19 +677,70 @@ function App() {
                 <div>
                   <p className="hero-tag">Profile Verification</p>
                   <h3>Authenticate your identity</h3>
+                  {user?.verified && <p className="verified-status">✅ Verified</p>}
                 </div>
               </div>
+
+              {(verificationMessage || verificationError) && (
+                <div className={`verification-feedback ${verificationError ? 'error' : 'success'}`}>
+                  {verificationMessage || verificationError}
+                </div>
+              )}
+
               {verificationStep === 'method' && (
                 <div className="verification-content">
                   <p>Select a method to continue</p>
                   <div className="verification-grid">
-                    <button onClick={() => setVerificationStep('otp')}>
+                    <button onClick={async () => {
+                      setVerificationLoading(true)
+                      setVerificationMessage('')
+                      setVerificationError('')
+                      try {
+                        const response = await fetch(`${API_BASE}/api/verify/otp/send`, {
+                          method: 'POST',
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                          },
+                        })
+                        const data = await response.json()
+                        if (!response.ok) throw new Error(data.message || 'Failed to send OTP')
+                        setVerificationMessage('OTP sent to your registered email.')
+                        setVerificationStep('otp')
+                      } catch (err) {
+                        setVerificationError(err.message || 'Error sending OTP.')
+                      } finally {
+                        setVerificationLoading(false)
+                      }
+                    }} disabled={!user || user.verified || verificationLoading}>
                       Email OTP
                     </button>
-                    <button onClick={() => setVerificationStep('sso')}>
+                    <button onClick={async () => {
+                      setVerificationLoading(true)
+                      setVerificationMessage('')
+                      setVerificationError('')
+                      try {
+                        // This is a placeholder for actual SSO flow
+                        // In a real app, this would redirect to an SSO provider
+                        const response = await fetch(`${API_BASE}/api/verify/sso/callback`, {
+                          method: 'GET', // Or appropriate method for SSO initiation/callback
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                          },
+                        })
+                        const data = await response.json()
+                        if (!response.ok) throw new Error(data.message || 'SSO verification failed')
+                        updateUser({ verified: true })
+                        setVerificationMessage('University SSO verification successful!')
+                        setVerificationStep('success')
+                      } catch (err) {
+                        setVerificationError(err.message || 'Error with SSO verification.')
+                      } finally {
+                        setVerificationLoading(false)
+                      }
+                    }} disabled={!user || user.verified || verificationLoading}>
                       University SSO
                     </button>
-                    <button onClick={() => setVerificationStep('docs')}>
+                    <button onClick={() => setVerificationStep('docs')} disabled={!user || user.verified || verificationLoading}>
                       Document Upload
                     </button>
                   </div>
@@ -748,51 +749,118 @@ function App() {
               {verificationStep === 'otp' && (
                 <div className="verification-content">
                   <p>Enter the 6-digit OTP sent to your university email.</p>
-                  <input placeholder="Enter OTP" />
+                  <input
+                    type="text"
+                    placeholder="Enter OTP"
+                    value={verificationOtp}
+                    onChange={(e) => setVerificationOtp(e.target.value)}
+                    maxLength="6"
+                    disabled={verificationLoading}
+                  />
                   <button
                     className="primary-btn"
-                    onClick={() => setVerificationStep('success')}
+                    onClick={async () => {
+                      setVerificationLoading(true)
+                      setVerificationMessage('')
+                      setVerificationError('')
+                      try {
+                        const response = await fetch(`${API_BASE}/api/verify/otp/verify`, {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${token}`,
+                          },
+                          body: JSON.stringify({ otp: verificationOtp }),
+                        })
+                        const data = await response.json()
+                        if (!response.ok) throw new Error(data.message || 'OTP verification failed')
+                        updateUser({ verified: true })
+                        setVerificationMessage('Profile verified successfully!')
+                        setVerificationStep('success')
+                      } catch (err) {
+                        setVerificationError(err.message || 'Invalid or expired OTP.')
+                      } finally {
+                        setVerificationLoading(false)
+                      }
+                    }}
+                    disabled={verificationOtp.length !== 6 || verificationLoading}
                   >
-                    Verify
-                  </button>
-                </div>
-              )}
-              {verificationStep === 'sso' && (
-                <div className="verification-content">
-                  <p>Redirecting to secure university sign-on.</p>
-                  <button
-                    className="primary-btn"
-                    onClick={() => setVerificationStep('success')}
-                  >
-                    Continue
+                    {verificationLoading ? 'Verifying...' : 'Verify'}
                   </button>
                 </div>
               )}
               {verificationStep === 'docs' && (
                 <div className="verification-content">
                   <p>Upload student ID or transcript for manual review.</p>
-                  <input type="file" />
+                  <input
+                    type="file"
+                    name="verificationDocs"
+                    accept="image/*,.pdf"
+                    multiple
+                    onChange={(e) => setVerificationDocs(Array.from(e.target.files))}
+                    disabled={verificationLoading}
+                  />
                   <button
                     className="primary-btn"
-                    onClick={() => setVerificationStep('success')}
+                    onClick={async () => {
+                      setVerificationLoading(true)
+                      setVerificationMessage('')
+                      setVerificationError('')
+                      try {
+                        const formData = new FormData()
+                        verificationDocs.forEach((file) => {
+                          formData.append('verificationDocs', file)
+                        })
+
+                        if (verificationDocs.length === 0) {
+                          throw new Error('Please select documents to upload.')
+                        }
+
+                        const response = await fetch(`${API_BASE}/api/verify/docs/upload`, {
+                          method: 'POST',
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                          },
+                          body: formData,
+                        })
+                        const data = await response.json()
+                        if (!response.ok) throw new Error(data.message || 'Document upload failed')
+                        // User's verified status will be updated by an admin manually in this flow
+                        setVerificationMessage('Documents uploaded for review. Status pending.')
+                        setVerificationStep('success')
+                      } catch (err) {
+                        setVerificationError(err.message || 'Error uploading documents.')
+                      } finally {
+                        setVerificationLoading(false)
+                      }
+                    }}
+                    disabled={verificationDocs.length === 0 || verificationLoading}
                   >
-                    Submit
+                    {verificationLoading ? 'Submitting...' : 'Submit'}
                   </button>
                 </div>
               )}
               {verificationStep === 'success' && (
                 <div className="verification-success">
                   <FaShieldAlt />
-                  <h4>You're all set!</h4>
+                  <h4>{user?.verified ? "You're all set!" : "Documents submitted!"}</h4>
                   <p>
-                    Access granted to edit badges, upload resumes & manage your
-                    showcase.
+                    {user?.verified
+                      ? 'Access granted to edit badges, upload resumes & manage your showcase.'
+                      : 'Your documents are under review. You will be notified once verified.'}
                   </p>
                   <button
                     className="primary-btn"
-                    onClick={() => setShowVerification(false)}
+                    onClick={() => {
+                      setShowVerification(false)
+                      setVerificationMessage('')
+                      setVerificationError('')
+                      setVerificationOtp('')
+                      setVerificationDocs([])
+                      if (user?.verified) navigate('/dashboard') // Redirect to dashboard if verified
+                    }}
                   >
-                    Go to Dashboard
+                    {user?.verified ? 'Go to Dashboard' : 'Close'}
                   </button>
                 </div>
               )}

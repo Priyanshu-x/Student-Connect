@@ -19,6 +19,11 @@ const userSchema = new mongoose.Schema(
       required: true,
       minlength: 6,
     },
+    role: {
+      type: String,
+      enum: ['student', 'admin', 'moderator'],
+      default: 'student',
+    },
     department: {
       type: String,
       default: '',
@@ -48,6 +53,12 @@ const userSchema = new mongoose.Schema(
     score: {
       type: Number,
       default: 0,
+    },
+    otp: String,
+    otpExpires: Date,
+    verificationDocuments: {
+      type: [String],
+      default: [],
     },
   },
   { timestamps: true }
