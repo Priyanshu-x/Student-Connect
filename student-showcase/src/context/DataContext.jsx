@@ -11,7 +11,7 @@ export const DataProvider = ({ children }) => {
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState(null);
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
   const fetchData = async () => {
     setIsLoadingData(true);
