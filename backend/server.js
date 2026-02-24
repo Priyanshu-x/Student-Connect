@@ -11,6 +11,7 @@ const userRoutes = require('./src/routes/userRoutes') // Import userRoutes
 const verificationRoutes = require('./src/routes/verificationRoutes') // Import verificationRoutes
 const eventRoutes = require('./src/routes/eventRoutes') // Import eventRoutes
 const notificationRoutes = require('./src/routes/notificationRoutes') // Import notificationRoutes
+const projectRoutes = require('./src/routes/projectRoutes') // Import projectRoutes
 
 const app = express()
 
@@ -32,6 +33,7 @@ app.use('/api/users', userRoutes) // Use userRoutes
 app.use('/api/verify', verificationRoutes) // Use verificationRoutes
 app.use('/api/events', eventRoutes) // Use eventRoutes
 app.use('/api/notifications', notificationRoutes) // Use notificationRoutes
+app.use('/api/projects', projectRoutes) // Use projectRoutes
 
 const { notFound, errorHandler } = require('./src/middleware/errorMiddleware')
 

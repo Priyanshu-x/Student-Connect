@@ -1,9 +1,14 @@
 import { motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useNavigate } from 'react-router-dom'
+import { FaUserEdit, FaCloudUploadAlt, FaMagic, FaSignOutAlt, FaRocket, FaHome } from 'react-icons/fa'
+import '../App.css'
 
 const Dashboard = () => {
-  const { user, token, updateUser } = useAuth()
+  const { user, token, updateUser, logout } = useAuth()
+  const navigate = useNavigate()
+
   const [formData, setFormData] = useState({
     name: '',
     department: '',
@@ -70,7 +75,7 @@ const Dashboard = () => {
         throw new Error(data.message || 'Failed to update profile')
       }
 
-      updateUser(data) // Update user context
+      updateUser(data)
       setMessage('Profile updated successfully!')
     } catch (err) {
       setError(err.message || 'An error occurred')
@@ -113,9 +118,8 @@ const Dashboard = () => {
         throw new Error(data.message || 'Failed to upload files')
       }
 
-      updateUser(data.user) // Update user context with new file paths
+      updateUser(data.user)
       setMessage('Files uploaded successfully!')
-      // Clear file inputs after successful upload
       setProfileImage(null)
       setResume(null)
       setCertificates([])
@@ -126,93 +130,227 @@ const Dashboard = () => {
     }
   }
 
+  const [projectData, setProjectData] = useState({
+    title: '',
+    description: '',
+    techStack: '',
+    githubLink: '',
+    demoLink: '',
+  })
+  const [projectLoading, setProjectLoading] = useState(false)
+  const [projectMessage, setProjectMessage] = useState('')
+  const [projectError, setProjectError] = useState('')
+
+  const handleProjectChange = (e) => {
+    setProjectData({ ...projectData, [e.target.name]: e.target.value })
+  }
+
+  const handleSubmitProject = async (e) => {
+    e.preventDefault()
+    setProjectLoading(true)
+    setProjectMessage('')
+    setProjectError('')
+
+    try {
+      const techStackArray = projectData.techStack.split(',').map((t) => t.trim()).filter(Boolean)
+
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/projects`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ...projectData, techStack: techStackArray }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create project')
+      }
+
+      setProjectMessage('Project added successfully!')
+      setProjectData({
+        title: '',
+        description: '',
+        techStack: '',
+        githubLink: '',
+        demoLink: '',
+      })
+    } catch (err) {
+      setProjectError(err.message || 'An error occurred')
+    } finally {
+      setProjectLoading(false)
+    }
+  }
 
   return (
     <div className="dashboard-page">
-      <motion.div
-        className="dashboard-card"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <p className="hero-tag mini">Your Portal</p>
-        <h2>Welcome to SGSU Dashboard, {user?.name || 'User'}</h2>
-        <p>Manage your profile, achievements, and uploads here.</p>
+      <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
 
-        {isLoading && <p className="loading-message">Loading...</p>}
-        {message && <p className="success-message">{message}</p>}
-        {error && <p className="error-message">{error}</p>}
+        <motion.header
+          className="dashboard-header"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div>
+            <h1 style={{ fontWeight: 700, fontSize: '1.8rem' }}>Student Studio</h1>
+            <p style={{ color: 'var(--muted)' }}>Welcome back, {user?.name?.split(' ')[0] || 'Creator'}</p>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button onClick={() => navigate('/')} className="ghost-btn compact">
+              <FaHome /> Home
+            </button>
+            <button onClick={logout} className="primary-btn compact warning">
+              <FaSignOutAlt /> Logout
+            </button>
+          </div>
+        </motion.header>
 
-        <div className="dashboard-sections">
-          <section className="profile-edit-section">
-            <h3>Edit Profile</h3>
-            <form onSubmit={handleSubmitProfile} className="profile-form">
-              <label>
-                Name:
-                <input type="text" name="name" value={formData.name} onChange={handleChange} />
-              </label>
-              <label>
-                Department:
-                <input type="text" name="department" value={formData.department} onChange={handleChange} />
-              </label>
-              <label>
-                Year:
-                <input type="text" name="year" value={formData.year} onChange={handleChange} />
-              </label>
-              <label>
-                Hobbies (comma-separated):
-                <input type="text" name="hobbies" value={formData.hobbies} onChange={handleChange} />
-              </label>
-              <label>
-                Clubs (comma-separated):
-                <input type="text" name="clubs" value={formData.clubs} onChange={handleChange} />
-              </label>
-              <button type="submit" className="primary-btn" disabled={isLoading}>
-                {isLoading ? 'Saving...' : 'Save Profile'}
-              </button>
-            </form>
-          </section>
+        {(message || error) && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            style={{ padding: '1rem', background: error ? '#fee2e2' : '#dcfce7', color: error ? '#991b1b' : '#166534', borderRadius: '12px', marginBottom: '2rem' }}
+          >
+            {message || error}
+          </motion.div>
+        )}
 
-          <section className="media-upload-section">
-            <h3>Upload Media</h3>
-            <form onSubmit={handleUploadFiles} className="upload-form">
-              <label>
-                Profile Image:
-                <input type="file" name="profileImage" accept="image/*" onChange={handleFileChange} />
-              </label>
-              {user?.profileImage && (
-                <div className="current-file">
-                  Current: <a href={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/${user.profileImage}`} target="_blank" rel="noopener noreferrer">View Image</a>
+        <div className="dashboard-grid">
+          {/* Left Column: Identity */}
+          <div className="left-column">
+            <motion.div
+              className="studio-card"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <h3><FaUserEdit /> Edit Profile Details</h3>
+              <form onSubmit={handleSubmitProfile}>
+                <div className="form-group">
+                  <label>Full Name</label>
+                  <input className="modern-input" type="text" name="name" value={formData.name} onChange={handleChange} />
                 </div>
-              )}
-
-              <label>
-                Resume (PDF):
-                <input type="file" name="resume" accept=".pdf" onChange={handleFileChange} />
-              </label>
-              {user?.resume && (
-                <div className="current-file">
-                  Current: <a href={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/${user.resume}`} target="_blank" rel="noopener noreferrer">View Resume</a>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label>Department</label>
+                    <input className="modern-input" type="text" name="department" value={formData.department} onChange={handleChange} />
+                  </div>
+                  <div className="form-group">
+                    <label>Year</label>
+                    <input className="modern-input" type="text" name="year" value={formData.year} onChange={handleChange} />
+                  </div>
                 </div>
-              )}
-
-              <label>
-                Certificates (Max 5, images/PDFs):
-                <input type="file" name="certificates" accept="image/*,.pdf" multiple onChange={handleFileChange} />
-              </label>
-              {user?.certificates && user.certificates.length > 0 && (
-                <div className="current-file">
-                  Current: {user.certificates.map((cert, index) => (
-                    <a key={index} href={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/${cert}`} target="_blank" rel="noopener noreferrer">Cert {index + 1}</a>
-                  ))}
+                <div className="form-group">
+                  <label>Hobbies (comma-separated)</label>
+                  <input className="modern-input" type="text" name="hobbies" value={formData.hobbies} onChange={handleChange} placeholder="Photography, Coding..." />
                 </div>
-              )}
-              <button type="submit" className="primary-btn" disabled={isLoading}>
-                {isLoading ? 'Uploading...' : 'Upload Files'}
-              </button>
-            </form>
-          </section>
+                <div className="form-group">
+                  <label>Clubs (comma-separated)</label>
+                  <input className="modern-input" type="text" name="clubs" value={formData.clubs} onChange={handleChange} placeholder="Debate Club, AI Society..." />
+                </div>
+                <button type="submit" className="primary-btn" style={{ width: '100%' }} disabled={isLoading}>
+                  {isLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </form>
+            </motion.div>
+
+            <motion.div
+              className="studio-card"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <h3><FaCloudUploadAlt /> Media Uploads</h3>
+              <form onSubmit={handleUploadFiles}>
+                <div className="form-group">
+                  <label>Profile Picture</label>
+                  <div className="file-drop-zone" onClick={() => document.getElementById('pfp-input').click()}>
+                    <input id="pfp-input" type="file" name="profileImage" accept="image/*" onChange={handleFileChange} hidden />
+                    <div className="file-drop-content">
+                      <span>{profileImage ? profileImage.name : 'Click to upload new avatar'}</span>
+                    </div>
+                  </div>
+                  {user?.profileImage && <div className="preview-chip">Current: Active</div>}
+                </div>
+
+                <div className="form-group">
+                  <label>Resume (PDF)</label>
+                  <div className="file-drop-zone" onClick={() => document.getElementById('resume-input').click()}>
+                    <input id="resume-input" type="file" name="resume" accept=".pdf" onChange={handleFileChange} hidden />
+                    <div className="file-drop-content">
+                      <span>{resume ? resume.name : 'Click to update resume'}</span>
+                    </div>
+                  </div>
+                  {user?.resume && <a href={`${import.meta.env.VITE_API_BASE_URL}/${user.resume}`} target="_blank" rel="noreferrer" className="preview-chip" style={{ textDecoration: 'none', color: 'inherit' }}>View Current Resume</a>}
+                </div>
+
+                <button type="submit" className="ghost-btn" style={{ width: '100%' }} disabled={isLoading}>
+                  Upload Media
+                </button>
+              </form>
+            </motion.div>
+          </div>
+
+          {/* Right Column: Projects */}
+          <div className="right-column">
+            <motion.div
+              className="studio-card"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <h3><FaRocket /> Launch New Project</h3>
+              {projectMessage && <p className="success-message" style={{ marginBottom: '1rem' }}>{projectMessage}</p>}
+              {projectError && <p className="error-message" style={{ marginBottom: '1rem' }}>{projectError}</p>}
+
+              <form onSubmit={handleSubmitProject}>
+                <div className="form-group">
+                  <label>Project Title</label>
+                  <input className="modern-input" type="text" name="title" value={projectData.title} onChange={handleProjectChange} required placeholder="e.g. AI-Powered Chess Bot" />
+                </div>
+
+                <div className="form-group">
+                  <label>Description</label>
+                  <textarea className="modern-textarea" name="description" value={projectData.description} onChange={handleProjectChange} required placeholder="Describe what you built..." />
+                </div>
+
+                <div className="form-group">
+                  <label>Tech Stack</label>
+                  <input className="modern-input" type="text" name="techStack" value={projectData.techStack} onChange={handleProjectChange} placeholder="React, Node.js, MongoDB..." />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label>GitHub URL</label>
+                    <input className="modern-input" type="url" name="githubLink" value={projectData.githubLink} onChange={handleProjectChange} placeholder="https://github.com/..." />
+                  </div>
+                  <div className="form-group">
+                    <label>Live Demo URL</label>
+                    <input className="modern-input" type="url" name="demoLink" value={projectData.demoLink} onChange={handleProjectChange} placeholder="https://..." />
+                  </div>
+                </div>
+
+                <button type="submit" className="primary-btn" style={{ width: '100%', marginTop: '1rem' }} disabled={projectLoading}>
+                  <FaMagic /> {projectLoading ? 'Launching...' : 'Publish Project'}
+                </button>
+              </form>
+            </motion.div>
+
+            <div className="studio-card" style={{ background: 'transparent', border: 'none', boxShadow: 'none', padding: 0 }}>
+              <h3 style={{ border: 'none', marginBottom: '0.5rem' }}>Your Project Stats</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                <div style={{ background: 'var(--bg-white)', padding: '1rem', borderRadius: '16px', textAlign: 'center' }}>
+                  <strong style={{ display: 'block', fontSize: '1.5rem', color: 'var(--text)' }}>{user?.score || 0}</strong>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>Score</span>
+                </div>
+                {/* We could add more stats here later */}
+              </div>
+            </div>
+          </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }

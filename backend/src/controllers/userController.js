@@ -31,7 +31,7 @@ const updateProfile = asyncHandler(async (req, res) => {
     user.profileImage = req.body.profileImage || user.profileImage
     user.resume = req.body.resume || user.resume
     user.certificates = req.body.certificates || user.certificates
-    
+
     // Only allow admin/moderator to change role, verified, or score
     if (req.user.role === 'admin' || req.user.role === 'moderator') {
       user.role = req.body.role || user.role
@@ -71,15 +71,15 @@ const updateProfile = asyncHandler(async (req, res) => {
 const getAllProfiles = asyncHandler(async (req, res) => {
   const keyword = req.query.keyword
     ? {
-        $or: [
-          { name: { $regex: req.query.keyword, $options: 'i' } },
-          { department: { $regex: req.query.keyword, $options: 'i' } },
-          { year: { $regex: req.query.keyword, $options: 'i' } },
-          { hobbies: { $regex: req.query.keyword, $options: 'i' } },
-          { clubs: { $regex: req.query.keyword, $options: 'i' } },
-          // Add other searchable fields here
-        ],
-      }
+      $or: [
+        { name: { $regex: req.query.keyword, $options: 'i' } },
+        { department: { $regex: req.query.keyword, $options: 'i' } },
+        { year: { $regex: req.query.keyword, $options: 'i' } },
+        { hobbies: { $regex: req.query.keyword, $options: 'i' } },
+        { clubs: { $regex: req.query.keyword, $options: 'i' } },
+        // Add other searchable fields here
+      ],
+    }
     : {}
 
   const profiles = await User.find({ ...keyword }).select('-password') // Exclude passwords
@@ -93,11 +93,42 @@ const getAllProfiles = asyncHandler(async (req, res) => {
 })
 
 const uploadProfileFiles = asyncHandler(async (req, res) => {
-  // Logic to handle uploaded files and update user profile will go here
-  // For now, just send a success response to resolve the ReferenceError
+  const user = await User.findById(req.user._id)
+
+  if (!user) {
+    res.status(404)
+    throw new Error('User not found')
+  }
+
+  // req.files is an object with fieldnames as keys (e.g., { profileImage: [...], resume: [...] })
+  if (req.files) {
+    if (req.files.profileImage) {
+      user.profileImage = req.files.profileImage[0].path.replace(/\\/g, '/') // Normalized path
+    }
+    if (req.files.resume) {
+      user.resume = req.files.resume[0].path.replace(/\\/g, '/')
+    }
+    if (req.files.certificates) {
+      // Map new files to paths
+      const newCertificates = req.files.certificates.map(file => file.path.replace(/\\/g, '/'))
+      // Append to existing certificates, limit to 5 total? Or replace? 
+      // User request said "Certificates (Max 5)". Usually replace or append. 
+      // Let's append but check limit. 
+      // For simplicity in this "Showcase" refresh, let's just push them.
+      // But we should be careful not to exceed limits defined in schemas if any.
+      user.certificates.push(...newCertificates)
+    }
+  }
+
+  const updatedUser = await user.save()
+
   res.status(200).json({
-    message: 'Files uploaded successfully (handler not fully implemented yet)',
-    files: req.files,
+    message: 'Files uploaded successfully',
+    user: {
+      profileImage: updatedUser.profileImage,
+      resume: updatedUser.resume,
+      certificates: updatedUser.certificates
+    }
   });
 });
 

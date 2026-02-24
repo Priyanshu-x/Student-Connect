@@ -1,0 +1,23 @@
+# Common
+node_modules/
+.env
+.env.local
+.env.*.local
+dist/
+build/
+*.log
+
+# Editor
+.vscode/
+.idea/
+.DS_Store
+
+# Frontend specifics
+student-showcase/node_modules/
+student-showcase/dist/
+student-showcase/.env
+
+# Backend specifics
+backend/node_modules/
+backend/.env
+backend/uploads/

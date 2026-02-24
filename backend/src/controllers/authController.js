@@ -6,50 +6,54 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' })
 }
 
-const signup = asyncHandler(async (req, res) => {
-  const { name, email, password, department, year } = req.body
+const claimProfile = asyncHandler(async (req, res) => {
+  const { collegeId, email, password } = req.body
 
-  if (!name || !email || !password || !department || !year) {
+  if (!collegeId || !email || !password) {
     res.status(400)
-    throw new Error('Please provide all required fields.')
+    throw new Error('Please provide College ID, Email, and a new Password.')
   }
 
-  if (password.length < 6) {
-    res.status(400)
-    throw new Error('Password must be at least 6 characters.')
+  // 1. Find user by College ID
+  const user = await User.findOne({ collegeId: collegeId.toUpperCase() })
+
+  if (!user) {
+    res.status(404)
+    throw new Error('Student record not found. Please contact administration.')
   }
 
-  const existingUser = await User.findOne({ email })
-  if (existingUser) {
+  // 2. Check if already claimed
+  if (user.isClaimed) {
     res.status(409)
-    throw new Error('An account with this email already exists.')
+    throw new Error('This profile has already been claimed. Please log in.')
   }
 
-  const user = await User.create({
-    name,
-    email,
-    password,
-    department,
-    year,
+  // 3. Verify Email Match (In a real app, we'd send an OTP here)
+  if (user.email.toLowerCase() !== email.toLowerCase()) {
+    res.status(401)
+    throw new Error('Email does not match our records for this ID.')
+  }
+
+  // 4. Claim Profile
+  user.password = password // Will be hashed by pre-save hook
+  user.isClaimed = true
+  user.verified = true // Auto-verify on claim for this demo
+  await user.save()
+
+  res.status(200).json({
+    success: true,
+    token: generateToken(user._id),
+    user: {
+      id: user._id,
+      name: user.name,
+      collegeId: user.collegeId,
+      email: user.email,
+      department: user.department,
+      year: user.year,
+      verified: user.verified,
+      isClaimed: true,
+    },
   })
-
-  if (user) {
-    res.status(201).json({
-      success: true,
-      token: generateToken(user._id),
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        department: user.department,
-        year: user.year,
-        verified: user.verified,
-      },
-    })
-  } else {
-    res.status(400)
-    throw new Error('Invalid user data')
-  }
 })
 
 const login = asyncHandler(async (req, res) => {
@@ -66,6 +70,11 @@ const login = asyncHandler(async (req, res) => {
     throw new Error('Invalid credentials.')
   }
 
+  if (!user.isClaimed) {
+    res.status(403)
+    throw new Error('Profile exists but is unclaimed. Please claim your profile first.')
+  }
+
   const isMatch = await user.comparePassword(password)
   if (!isMatch) {
     res.status(400)
@@ -78,10 +87,12 @@ const login = asyncHandler(async (req, res) => {
     user: {
       id: user._id,
       name: user.name,
+      collegeId: user.collegeId,
       email: user.email,
       department: user.department,
       year: user.year,
       verified: user.verified,
+      isClaimed: user.isClaimed,
     },
   })
 })
@@ -94,7 +105,7 @@ const getMe = asyncHandler(async (req, res) => {
 })
 
 module.exports = {
-  signup,
+  claimProfile,
   login,
   getMe,
 }

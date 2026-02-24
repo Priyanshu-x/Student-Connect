@@ -8,6 +8,17 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    collegeId: {
+      type: String,
+      required: true,
+      unique: true,
+      uppercase: true,
+      trim: true,
+    },
+    isClaimed: {
+      type: Boolean,
+      default: false,
+    },
     email: {
       type: String,
       required: true,
@@ -16,7 +27,8 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      // Password is required only if the account is claimed
+      required: function () { return this.isClaimed },
       minlength: 6,
     },
     role: {

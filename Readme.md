@@ -1,136 +1,96 @@
-# Student Showcase Platform
+# Student Connect 🎓
 
-This is a full-stack web application designed to showcase student projects. It features a robust backend for user authentication, event management, leaderboards, and notifications, coupled with a dynamic and interactive React frontend.
+Student Connect is a premium, full-stack student networking and project showcase platform. It enables students to build professional digital identities, showcase their technical achievements, and discover peers through a "Smart Directory" interface.
 
-## Features
+## 🚀 Key Features
 
-*   **User Authentication:** Secure user registration, login, and profile management.
-*   **Project Showcase:** Allows students to upload and display their projects.
-*   **Event Management:** Create and manage events related to project showcases or student activities.
-*   **Leaderboard:** Track and display top-performing projects or active users.
-*   **Notifications:** Real-time notifications for important updates or activities.
-*   **Profile Management:** Users can manage their personal information and project listings.
+*   **Smart Directory**: A decluttered, search-first directory that reveals student profiles only when you need them.
+*   **Student Studio (Dashboard 2.0)**: A high-performance personal workspace for managing profile details, resumes, and project launches.
+*   **Dedicated Profile Pages**: Shareable, public-facing profiles (`/profile/:id`) that highlight a student's full journey and project history.
+*   **Monochromatic Modern UI**: A sleek, professional dark-mode inspired aesthetic optimized for focus and readability.
+*   **Project Showcase**: Integrated "launchpad" for students to publish their technical work with GitHub and Live Demo links.
+*   **Activity Scoring**: An automated system that tracks and displays social/technical engagement metrics.
 
-## Technologies Used
+## 🛠️ Tech Stack
 
 ### Frontend
-
-*   **React.js:** A JavaScript library for building user interfaces.
-*   **Vite:** A fast build tool for modern web projects.
-*   **React Router DOM:** For declarative routing in React applications.
-*   **Axios:** Promise-based HTTP client for the browser and node.js.
-*   **Framer Motion:** A production-ready motion library for React.
-*   **React Icons:** Popular icon packs as React components.
-*   **CSS:** For styling the application.
+- **React.js & Vite**: Fast, modern development and build system.
+- **Framer Motion**: Smooth, high-end micro-animations and transitions.
+- **React Router 6**: Robust client-side routing with dynamic profile support.
+- **Context API**: Global state management for Auth and Real-time Data.
 
 ### Backend
+- **Node.js & Express**: Scalable server architecture.
+- **MongoDB & Mongoose**: Flexible NoSQL data modeling.
+- **JWT Auth**: Secure, stateless authentication flow.
+- **Multer**: Optimized handling for profile image and resume uploads.
 
-*   **Node.js:** JavaScript runtime environment.
-*   **Express.js:** Fast, unopinionated, minimalist web framework for Node.js.
-*   **MongoDB:** NoSQL database for storing application data.
-*   **Mongoose:** MongoDB object data modeling (ODM) for Node.js.
-*   **JWT (JSON Web Tokens):** For secure authentication and authorization.
-*   **Bcryptjs:** For hashing passwords securely.
-*   **CORS:** Middleware for enabling Cross-Origin Resource Sharing.
-*   **Dotenv:** Loads environment variables from a .env file.
-*   **Nodemon:** A tool that helps develop Node.js based applications by automatically restarting the node application when file changes in the directory are detected.
-
-## Getting Started
-
-Follow these instructions to set up and run the project locally on your machine.
+## 🏁 Getting Started
 
 ### Prerequisites
-
-*   Node.js (LTS version recommended)
-*   npm (comes with Node.js) or Yarn
-*   MongoDB (locally installed or a cloud service like MongoDB Atlas)
+- Node.js (LTS)
+- MongoDB (Local or Atlas)
+- npm or yarn
 
 ### Installation
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/Priyanshu-x/Student-Connect
-    cd student-showcase
-    ```
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Priyanshu-x/Student-Connect
+   cd Student-Connect
+   ```
 
-2.  **Backend Setup:**
-    ```bash
-    cd project-root/backend
-    npm install
-    ```
-    Create a `.env` file in the `project-root/backend` directory and add your environment variables. Example:
-    ```
-    PORT=5000
-    MONGO_URI=your_mongodb_connection_string
-    JWT_SECRET=your_jwt_secret
-    ```
+2. **Backend Setup:**
+   ```bash
+   cd backend
+   npm install
+   ```
+   Create a `.env` file in `backend/`:
+   ```env
+   PORT=5000
+   MONGO_URI=your_mongodb_uri
+   JWT_SECRET=your_jwt_secret
+   ```
 
-3.  **Frontend Setup:**
-    ```bash
-    cd ../frontend
-    npm install
-    ```
+3. **Frontend Setup:**
+   ```bash
+   cd student-showcase
+   npm install
+   ```
+   Create a `.env` file in `student-showcase/`:
+   ```env
+   VITE_API_BASE_URL=http://localhost:5000
+   ```
 
-### Running the Application
+### Running Locally
 
-1.  **Start the Backend Server:**
-    ```bash
-    cd project-root/backend
-    npm run server # or npm start for production
-    ```
-    The backend server will run on `http://localhost:5000` (or the port specified in your .env).
+1. **Start Backend**: `cd backend && npm run dev`
+2. **Start Frontend**: `cd student-showcase && npm run dev`
 
-2.  **Start the Frontend Development Server:**
-    ```bash
-    cd project-root/frontend
-    npm run dev
-    ```
-    The frontend application will typically open in your browser at `http://localhost:5173` (or another port as indicated by Vite).
-
-## Folder Structure
+## 📂 Project Structure
 
 ```
-project-root/
-├── backend/                  # Backend application (Node.js, Express, MongoDB)
-│   ├── .env                  # Environment variables
-│   ├── package.json          # Backend dependencies
-│   ├── server.js             # Main server file
-│   ├── middleware/           # Express middleware
-│   ├── models/               # Mongoose schemas
-│   └── routes/               # API routes
-└── frontend/                 # Frontend application (React, Vite)
-    ├── .gitignore
-    ├── package.json          # Frontend dependencies
-    ├── index.html            # Main HTML file
-    ├── vite.config.js        # Vite configuration
-    ├── public/               # Static assets
-    └── src/                  # React source code
-        ├── api.js            # API client
-        ├── App.css           # Global CSS for App component
-        ├── App.jsx           # Main App component
-        ├── index.css         # Global CSS
-        ├── main.jsx          # Entry point for React app
-        ├── assets/           # Images and other assets
-        └── utils/            # Utility functions
+Student-Connect/
+├── backend/                  # Express Server & API
+│   ├── src/
+│   │   ├── models/           # Mongoose Schemas (User, Project)
+│   │   ├── routes/           # API Endpoints
+│   │   └── middleware/       # Auth & Error handling
+│   └── scripts/              # Seed & Setup scripts
+└── student-showcase/         # React Frontend
+    ├── src/
+    │   ├── context/          # Auth & Data Global State
+    │   ├── pages/            # Home, Profile, Dashboard
+    │   └── components/       # Reusable UI Blocks
 ```
 
-## Contributing
+## 🎨 Design System
 
-Contributions are welcome! Please feel free to open issues or submit pull requests.
+The platform follows a **Premium Monochromatic** theme:
+- **Primary**: Slate 900 (`#0f172a`) & Slate 800 (`#1e293b`)
+- **Accents**: Pure White (`#FFFFFF`) & Electric Blue (`#3B82F6`)
+- **Typography**: Inter / System Sans
+- **Visuals**: Glassmorphism, subtle gradients, and soft shadows.
 
-## License
-
-This project is licensed under the ISC License.
-
-## Color Palette
-
-The application uses a "Light Dashboard with Vibrant Accents" theme, inspired by a modern tech startup vibe.
-
-### Palette Details:
-*   **Background:** Pure White (`#FFFFFF`)
-*   **Primary Text/Elements:** Dark Navy (`#0F172A`)
-*   **Accent 1 (Electric Blue):** `#3B82F6` (used for general accents, links, primary buttons)
-*   **Accent 2 (Lime Green):** `#84CC16` (used for progress indicators, secondary buttons)
-*   **Accent 3 (Purple):** `#A855F7` (used for badges and specific highlight elements)
-
-**Rationale:** The design emphasizes clean light backgrounds with carefully chosen vibrant accents to highlight specific interactive elements and data, avoiding an overwhelming color scheme.
+---
+Developed with ❤️ for the student community.

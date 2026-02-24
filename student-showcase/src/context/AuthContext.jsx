@@ -68,20 +68,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signup = async (name, email, password, department, year) => {
+  const claimProfile = async (collegeId, email, password) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/api/auth/signup`, {
+      const response = await fetch(`${API_BASE}/api/auth/claim`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, email, password, department, year }),
+        body: JSON.stringify({ collegeId, email, password }),
       });
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message || 'Signup failed');
+        throw new Error(data.message || 'Claiming profile failed');
       }
 
       localStorage.setItem('sgsu_token', data.token);
@@ -107,7 +107,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, signup, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, claimProfile, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

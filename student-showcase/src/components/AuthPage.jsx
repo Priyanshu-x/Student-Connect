@@ -5,24 +5,17 @@ import { useAuth } from '../context/AuthContext'
 
 const fieldSets = {
   login: [
-    { key: 'email', label: 'Email', type: 'email', placeholder: 'you@sgsu.edu' },
+    { key: 'email', label: 'Email', type: 'email', placeholder: 'you@college.edu' },
     { key: 'password', label: 'Password', type: 'password', placeholder: 'Enter password' },
   ],
-  signup: [
-    { key: 'name', label: 'Full Name', type: 'text', placeholder: 'Enter your name' },
-    { key: 'email', label: 'Email', type: 'email', placeholder: 'you@sgsu.edu' },
-    {
-      key: 'department',
-      label: 'Department',
-      type: 'text',
-      placeholder: 'e.g., Computer Science',
-    },
-    { key: 'year', label: 'Year', type: 'text', placeholder: 'e.g., 3rd Year' },
+  signup: [ // Renamed conceptually to 'Claim', but keeping key 'signup' for router compatibility if needed, or switching logic below
+    { key: 'collegeId', label: 'College ID', type: 'text', placeholder: 'e.g., CS2025001' },
+    { key: 'email', label: 'College Email', type: 'email', placeholder: 'Verify your identity' },
     {
       key: 'password',
-      label: 'Password',
+      label: 'New Password',
       type: 'password',
-      placeholder: 'Create password',
+      placeholder: 'Set a secure password',
     },
   ],
 }
@@ -60,8 +53,8 @@ const NeonButton = ({ children, variant = 'primary', isLoading, ...props }) => (
 const AuthPage = ({ variant = 'login' }) => {
   const isLogin = variant === 'login'
   const navigate = useNavigate()
-  const fields = fieldSets[variant]
-  const { login, signup, isLoading: authLoading } = useAuth()
+  const fields = fieldSets[isLogin ? 'login' : 'signup']
+  const { login, claimProfile, isLoading: authLoading } = useAuth()
 
   const [formData, setFormData] = useState(() => createInitialState(fields))
   const [status, setStatus] = useState({ error: '', success: '' })
@@ -98,12 +91,11 @@ const AuthPage = ({ variant = 'login' }) => {
       if (isLogin) {
         result = await login(formData.email, formData.password)
       } else {
-        result = await signup(
-          formData.name,
+        // Call claimProfile instead of signup
+        result = await claimProfile(
+          formData.collegeId,
           formData.email,
-          formData.password,
-          formData.department,
-          formData.year
+          formData.password
         )
       }
 
@@ -112,7 +104,7 @@ const AuthPage = ({ variant = 'login' }) => {
           error: '',
           success: isLogin
             ? 'Login successful! Redirecting...'
-            : 'Account created! Redirecting...',
+            : 'Profile claimed! Redirecting...',
         })
         // Redirection handled by AuthContext
       } else {
@@ -140,11 +132,11 @@ const AuthPage = ({ variant = 'login' }) => {
       >
         <div className="auth-card-header">
           <p className="hero-tag mini">Scope Global Skills University</p>
-          <h2>{isLogin ? 'Welcome Back' : 'Create your profile'}</h2>
+          <h2>{isLogin ? 'Welcome Back' : 'Claim Your Profile'}</h2>
           <p>
             {isLogin
-              ? 'Sign in to continue showcasing achievements and exploring peers.'
-              : 'Sign up to publish achievements, earn badges and join the leaderboard.'}
+              ? 'Sign in to manage your portfolio and events.'
+              : 'Enter your College ID to activate your pre-listed profile.'}
           </p>
         </div>
 
@@ -173,14 +165,15 @@ const AuthPage = ({ variant = 'login' }) => {
             variant={isLogin ? 'primary' : 'secondary'}
             isLoading={isSubmitting || authLoading}
           >
-            {isLogin ? 'Login' : 'Sign up'}
+            {isLogin ? 'Login' : 'Claim Profile'}
           </NeonButton>
         </form>
 
         <p className="auth-switch">
-          {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
+          {isLogin ? "Not active yet?" : 'Already claimed?'}
+          {' '}
           <Link to={isLogin ? '/signup' : '/login'}>
-            {isLogin ? 'Create one' : 'Login'}
+            {isLogin ? 'Claim Profile' : 'Login'}
           </Link>
         </p>
         <Link to="/" className="auth-home-link">
@@ -192,4 +185,3 @@ const AuthPage = ({ variant = 'login' }) => {
 }
 
 export default AuthPage
-
