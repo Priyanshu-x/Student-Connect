@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import { FaComments } from 'react-icons/fa'
 import '../App.css'
 
 const navLinks = [
@@ -8,6 +9,7 @@ const navLinks = [
     { label: 'About', href: '#about' },
     { label: 'Features', href: '#features' },
     { label: 'Leaderboard', href: '#leaderboard' },
+    { label: 'Chattr', href: 'https://chattr-x.onrender.com/', external: true },
 ]
 
 const Navbar = () => {
@@ -31,15 +33,19 @@ const Navbar = () => {
             <nav>
                 {navLinks.map((link) => (
                     <motion.a
-                        key={link.href}
+                        key={link.label}
                         href={link.href}
+                        target={link.external ? "_blank" : "_self"}
+                        rel={link.external ? "noopener noreferrer" : ""}
                         className={`nav-link ${activeNav === link.href ? 'active' : ''}`}
-                        onClick={() => setActiveNav(link.href)}
-                        onMouseEnter={() => setActiveNav(link.href)}
+                        onClick={() => !link.external && setActiveNav(link.href)}
+                        onMouseEnter={() => !link.external && setActiveNav(link.href)}
                         whileHover={{ scale: 1.05 }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
                     >
+                        {link.label === 'Chattr' && <FaComments />}
                         {link.label}
-                        {activeNav === link.href && (
+                        {activeNav === link.href && !link.external && (
                             <motion.span
                                 layoutId="navIndicator"
                                 className="nav-indicator"
